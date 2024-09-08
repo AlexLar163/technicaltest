@@ -1,0 +1,84 @@
+version: '3.8'
+
+networks:
+  technicaltest_network:
+    driver: bridge
+
+services:
+  db1:
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: root0107088569
+      POSTGRES_DB: clients_person_ms
+    ports:
+      - "5434:5432"
+    networks:
+      - technicaltest_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  db2:
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: root0107088569
+      POSTGRES_DB: account_movements_ms
+    ports:
+      - "5435:5432"
+    networks:
+      - technicaltest_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  microservice1:
+    build: 
+      context: ./client-person-microservice
+      dockerfile: ./docker/Dockerfile
+    ports:
+      - "8081:8080"
+    depends_on:
+      db1:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
+    networks:
+      - technicaltest_network
+    environment:
+      DATASOURCE_URL: jdbc:postgresql://db1:5432/clients_person_ms
+      DATASOURCE_USERNAME: postgres
+      DATASOURCE_PASSWORD: root0107088569
+      RABBITMQ_HOST: rabbitmq
+
+  microservice2:
+    build: 
+      context: ./account-movements-microservice
+      dockerfile: ./docker/Dockerfile
+    ports:
+      - "8082:8080"
+    depends_on:
+      db2:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
+    networks:
+      - technicaltest_network
+    environment:
+      DATASOURCE_URL: jdbc:postgresql://db2:5432/account_movements_ms
+      DATASOURCE_USERNAME: postgres
+      DATASOURCE_PASSWORD: root0107088569
+      RABBITMQ_HOST: rabbitmq
+
+  rabbitmq:
+    image: rabbitmq:management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - technicaltest_network
