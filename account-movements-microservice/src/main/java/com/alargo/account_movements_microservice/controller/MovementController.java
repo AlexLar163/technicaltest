@@ -11,9 +11,7 @@ import java.util.List;
 @RequestMapping("/movements")
 public class MovementController {
 
-
     private final MovementService movementService;
-
 
     @Autowired
     public MovementController(MovementService movementService) {
@@ -44,6 +42,11 @@ public class MovementController {
     @DeleteMapping("/{id}")
     public void deleteMovement(@PathVariable Long id) {
         movementService.deleteMovement(id);
+    }
+
+    @PostMapping("/register")
+    public Movement registerMovement(@RequestBody Movement movement) {
+        return movementService.registerMovement(movement);
     }
 }
 

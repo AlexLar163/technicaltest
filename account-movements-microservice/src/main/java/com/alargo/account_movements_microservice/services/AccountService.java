@@ -1,6 +1,8 @@
 package com.alargo.account_movements_microservice.services;
 
 import com.alargo.account_movements_microservice.entity.Account;
+import com.alargo.account_movements_microservice.exception.CustomException;
+import com.alargo.account_movements_microservice.exception.ResourceNotFoundException;
 import com.alargo.account_movements_microservice.repository.AccountRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -17,21 +19,56 @@ public class AccountService {
         this.accountRepository = accountRepository;
     }
 
+
     public List<Account> getAllAccounts() {
-        return accountRepository.findAll();
+        try {
+            if (accountRepository.findAll().isEmpty()) {
+                throw new ResourceNotFoundException("No hay cuentas registradas");
+            }
+
+            return accountRepository.findAll();
+        } catch (ResourceNotFoundException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new CustomException("Error al obtener todas las cuentas: " + e.getMessage());
+        }
     }
 
     public Account getAccountById(Long id) {
-        return accountRepository.findById(id).orElse(null);
+        try {
+            if (!accountRepository.existsById(id)) {
+                throw new ResourceNotFoundException("Cuenta no encontrada");
+            }
+            return accountRepository.findById(id)
+                    .orElseThrow(() -> new ResourceNotFoundException("Cuenta no encontrada"));
+        } catch (ResourceNotFoundException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new CustomException("Error al obtener la cuenta por ID: " + e.getMessage());
+        }
     }
 
     public Account saveAccount(Account account) {
-        return accountRepository.save(account);
+        try {
+            return accountRepository.save(account);
+        } catch (Exception e) {
+            throw new CustomException("Error al guardar la cuenta: " + e.getMessage());
+        }
     }
 
     public void deleteAccount(Long id) {
-        accountRepository.deleteById(id);
+        try {
+            if (!accountRepository.existsById(id)) {
+                throw new ResourceNotFoundException("Cuenta no encontrada");
+            }
+            accountRepository.deleteById(id);
+        } catch (ResourceNotFoundException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new CustomException("Error al eliminar la cuenta: " + e.getMessage());
+        }
     }
+
 }
 
 

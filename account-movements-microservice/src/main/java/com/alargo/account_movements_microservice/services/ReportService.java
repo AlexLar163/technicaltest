@@ -1,36 +1,53 @@
 package com.alargo.account_movements_microservice.services;
 
-import com.alargo.account_movements_microservice.repository.MovementRepository;
+import com.alargo.account_movements_microservice.dto.CustomerFilterDTO;
+import com.alargo.account_movements_microservice.entity.Report;
+import com.alargo.account_movements_microservice.exception.CustomException;
+import com.alargo.account_movements_microservice.exception.ResourceNotFoundException;
+import com.alargo.account_movements_microservice.repository.ReportRepository;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
-import java.util.Map;
+import java.util.List;
 
 @Service
 public class ReportService {
-    private final AccountService accountService;
-    private final MovementRepository movementRepository;
+    private final RabbitTemplate rabbitTemplate;
+    private final ReportRepository reportRepository;
 
     @Autowired
-    public ReportService(AccountService accountService, MovementRepository movementRepository) {
-        this.accountService = accountService;
-        this.movementRepository = movementRepository;
+    public ReportService(RabbitTemplate rabbitTemplate, ReportRepository reportRepository) {
+        this.rabbitTemplate = rabbitTemplate;
+        this.reportRepository = reportRepository;
     }
 
-//    @Autowired
-//    private ClRepository clienteRepository;
+    public void generateReport(Long customerId, Date startDate, Date finishDate) {
+        try {
+            CustomerFilterDTO customerFilter = new CustomerFilterDTO();
+            customerFilter.setId(customerId);
+            customerFilter.setStartDate(Date.from(startDate.toInstant()));
+            customerFilter.setFinishDate(Date.from(finishDate.toInstant()));
 
-    public Map<String, Object> generarReporte(Date fechaInicio, Date fechaFin, Long clienteId) {
-//        Map<String, Object> reporte = new HashMap<>();
-//
-//        // Obtener datos de las cuentas del cliente
-//        reporte.put("cliente", customerRepository.findById(clienteId));
-//        reporte.put("cuentas", accountService.findCuentasByClienteId(clienteId));
-//
-//        // Obtener movimientos entre el rango de fechas
-//        reporte.put("movimientos", movimientoRepository.findMovimientosByClienteIdAndFechaBetween(clienteId, fechaInicio, fechaFin));
-//
-        return null;
+            rabbitTemplate.convertAndSend("exchange_name", "routing_key_customer", customerFilter);
+        } catch (Exception e) {
+            throw new CustomException("Error al generar el reporte: " + e.getMessage());
+        }
+    }
+
+    public List<Report> getReportsByAccountNumber(String accountNumber) {
+        try {
+            List<Report> reports = reportRepository.findByAccount_AccountNumber(accountNumber);
+            if (reports.isEmpty()) {
+                throw new ResourceNotFoundException("No se encontraron reportes para el número de cuenta: " + accountNumber);
+            }
+            return reports;
+        } catch (ResourceNotFoundException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new CustomException("Error al obtener los reportes por número de cuenta: " + e.getMessage());
+        }
     }
 }
+

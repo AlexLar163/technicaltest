@@ -13,7 +13,7 @@ import lombok.EqualsAndHashCode;
 public class Customer extends Person {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long customerId;
+    private Long id;
     private String password;
     private boolean state;
 }
