@@ -19,32 +19,24 @@ public class AccountService {
         this.accountRepository = accountRepository;
     }
 
-
     public List<Account> getAllAccounts() {
         try {
-            if (accountRepository.findAll().isEmpty()) {
+            List<Account> accounts = accountRepository.findAll();
+            if (accounts.isEmpty()) {
                 throw new ResourceNotFoundException("No hay cuentas registradas");
             }
-
-            return accountRepository.findAll();
-        } catch (ResourceNotFoundException e) {
-            throw e;
+            return accounts;
         } catch (Exception e) {
-            throw new CustomException("Error al obtener todas las cuentas: " + e.getMessage());
+            throw new CustomException("Error al obtener todas las cuentas");
         }
     }
 
     public Account getAccountById(Long id) {
         try {
-            if (!accountRepository.existsById(id)) {
-                throw new ResourceNotFoundException("Cuenta no encontrada");
-            }
             return accountRepository.findById(id)
                     .orElseThrow(() -> new ResourceNotFoundException("Cuenta no encontrada"));
-        } catch (ResourceNotFoundException e) {
-            throw e;
         } catch (Exception e) {
-            throw new CustomException("Error al obtener la cuenta por ID: " + e.getMessage());
+            throw new CustomException("Error al obtener la cuenta por ID");
         }
     }
 
@@ -52,23 +44,16 @@ public class AccountService {
         try {
             return accountRepository.save(account);
         } catch (Exception e) {
-            throw new CustomException("Error al guardar la cuenta: " + e.getMessage());
+            throw new CustomException("Error al guardar la cuenta");
         }
     }
 
     public void deleteAccount(Long id) {
         try {
-            if (!accountRepository.existsById(id)) {
-                throw new ResourceNotFoundException("Cuenta no encontrada");
-            }
-            accountRepository.deleteById(id);
-        } catch (ResourceNotFoundException e) {
-            throw e;
+            Account account = getAccountById(id);
+            accountRepository.delete(account);
         } catch (Exception e) {
-            throw new CustomException("Error al eliminar la cuenta: " + e.getMessage());
+            throw new CustomException("Error al eliminar la cuenta");
         }
     }
-
 }
-
-

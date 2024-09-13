@@ -6,7 +6,6 @@ import com.alargo.account_movements_microservice.exception.CustomException;
 import com.alargo.account_movements_microservice.exception.ResourceNotFoundException;
 import com.alargo.account_movements_microservice.repository.AccountRepository;
 import com.alargo.account_movements_microservice.repository.MovementRepository;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -17,41 +16,32 @@ import java.util.List;
 public class MovementService {
 
     private final MovementRepository movementRepository;
-    private final RabbitTemplate rabbitTemplate;
     private final AccountRepository accountRepository;
 
     @Autowired
-    public MovementService(MovementRepository movementRepository, RabbitTemplate rabbitTemplate, AccountRepository accountRepository) {
+    public MovementService(MovementRepository movementRepository, AccountRepository accountRepository) {
         this.movementRepository = movementRepository;
-        this.rabbitTemplate = rabbitTemplate;
         this.accountRepository = accountRepository;
     }
 
-
     public List<Movement> getAllMovements() {
         try {
-            if (movementRepository.findAll().isEmpty()) {
+            List<Movement> movements = movementRepository.findAll();
+            if (movements.isEmpty()) {
                 throw new ResourceNotFoundException("No hay movimientos registrados");
             }
-
-            return movementRepository.findAll();
-        } catch (ResourceNotFoundException e) {
-            throw e;
+            return movements;
         } catch (Exception e) {
-            throw new CustomException("Error al obtener todos los movimientos: " + e.getMessage());
+            throw new CustomException("Error al obtener todos los movimientos");
         }
     }
 
     public Movement getMovementById(Long id) {
         try {
-            if (!movementRepository.existsById(id)) {
-                throw new ResourceNotFoundException("Movimiento no encontrado");
-            }
-            return movementRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Movimiento no encontrado"));
-        } catch (ResourceNotFoundException e) {
-            throw e;
+            return movementRepository.findById(id)
+                    .orElseThrow(() -> new ResourceNotFoundException("Movimiento no encontrado"));
         } catch (Exception e) {
-            throw new CustomException("Error al obtener el movimiento por ID: " + e.getMessage());
+            throw new CustomException("Error al obtener el movimiento por ID");
         }
     }
 
@@ -62,38 +52,30 @@ public class MovementService {
                     .orElseThrow(() -> new ResourceNotFoundException("Cuenta no encontrada con ID: " + accountId));
             movement.setAccount(account);
             return movementRepository.save(movement);
-        } catch (ResourceNotFoundException e) {
-            throw e;
         } catch (Exception e) {
-            throw new CustomException("Error al guardar el movimiento: " + e.getMessage());
+            throw new CustomException("Error al guardar el movimiento");
         }
     }
 
     public void deleteMovement(Long id) {
         try {
-            if (!movementRepository.existsById(id)) {
-                throw new ResourceNotFoundException("Movimiento no encontrado");
-            }
-            movementRepository.deleteById(id);
-        } catch (ResourceNotFoundException e) {
-            throw e;
+            Movement movement = getMovementById(id);
+            movementRepository.delete(movement);
         } catch (Exception e) {
-            throw new CustomException("Error al eliminar el movimiento: " + e.getMessage());
+            throw new CustomException("Error al eliminar el movimiento");
         }
     }
 
     public Movement registerMovement(Movement movementDTO) {
-        Movement movement = new Movement();
-        Account account;
-
         try {
-            account = accountRepository.findById(movementDTO.getAccount().getId())
+            Account account = accountRepository.findById(movementDTO.getAccount().getId())
                     .orElseThrow(() -> new ResourceNotFoundException("Cuenta no encontrada"));
 
             if (account.getBalance() + movementDTO.getAmount() < 0) {
                 throw new ResourceNotFoundException("Saldo insuficiente");
             }
 
+            Movement movement = new Movement();
             movement.setAccount(account);
             movement.setDate(new Date());
             movement.setTypeMovement(movementDTO.getTypeMovement());
@@ -101,16 +83,11 @@ public class MovementService {
             movement.setInitialBalance(account.getBalance() + movementDTO.getAmount());
 
             account.setBalance(movement.getInitialBalance());
-
             accountRepository.save(account);
 
-        } catch (ResourceNotFoundException e) {
-            throw e;
+            return movementRepository.save(movement);
         } catch (Exception e) {
-            throw new CustomException("Error al registrar movimiento: " + e.getMessage());
+            throw new CustomException("Error al registrar movimiento");
         }
-        return movementRepository.save(movement);
     }
 }
-
-

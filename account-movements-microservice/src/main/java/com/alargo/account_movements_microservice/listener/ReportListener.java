@@ -1,56 +1,24 @@
 package com.alargo.account_movements_microservice.listener;
 
 import com.alargo.account_movements_microservice.dto.CustomerDataDTO;
-import com.alargo.account_movements_microservice.entity.Account;
-import com.alargo.account_movements_microservice.entity.Movement;
-import com.alargo.account_movements_microservice.entity.Report;
-import com.alargo.account_movements_microservice.repository.AccountRepository;
-import com.alargo.account_movements_microservice.repository.MovementRepository;
-import com.alargo.account_movements_microservice.repository.ReportRepository;
+import com.alargo.account_movements_microservice.services.ReportService;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
-import java.util.List;
 
 @Component
 public class ReportListener {
-    private final ReportRepository reportRepository;
-    private final AccountRepository accountRepository;
-    private final MovementRepository movementRepository;
+    private final ReportService reportService;
 
     @Autowired
-    public ReportListener(AccountRepository accountRepository, MovementRepository movementRepository, ReportRepository reportRepository) {
-        this.accountRepository = accountRepository;
-        this.movementRepository = movementRepository;
-        this.reportRepository = reportRepository;
+    public ReportListener(ReportService reportService) {
+        this.reportService = reportService;
     }
 
-    @RabbitListener(queues = {"report.queue"})
+    @RabbitListener(queues = {"${rabbitmq.queue.report}"})
     public void onCustomerResponse(@Payload CustomerDataDTO customerData) {
-        Long customerId = customerData.getId();
-        String customerName = customerData.getName();
-
-        List<Account> accounts = accountRepository.findByCustomerId(customerId);
-        List<Report> reports = new ArrayList<>();
-
-        for (Account account : accounts) {
-            List<Movement> movements = movementRepository
-                    .findByAccountAndDateBetween(account, customerData.getStartDate(), customerData.getFinishDate());
-
-            for (Movement movement : movements) {
-                Report report = new Report();
-                report.setCustomerName(customerName);
-                report.setAccount(account);
-                report.setMovement(movement);
-                report.setAvailableBalance(movement.getInitialBalance() + movement.getAmount());
-
-                reports.add(report);
-            }
-        }
-
-        reportRepository.saveAll(reports);
+        reportService.saveReport(customerData);
     }
 }

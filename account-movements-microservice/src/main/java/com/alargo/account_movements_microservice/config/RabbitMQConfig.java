@@ -9,6 +9,7 @@ import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.amqp.support.converter.MessageConverter;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -16,35 +17,44 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @EnableRabbit
 public class RabbitMQConfig {
-    public static final String QUEUE_NAME_CUSTOMER = "customer.queue";
-    public static final String QUEUE_NAME_REPORT = "report.queue";
-    public static final String EXCHANGE_NAME = "exchange_name";
-    public static final String ROUTING_KEY_CUSTOMER = "routing_key_customer";
-    public static final String ROUTING_KEY_REPORT = "routing_key_report";
+    @Value("${rabbitmq.queue.customer}")
+    private String customerQueueName;
+
+    @Value("${rabbitmq.queue.report}")
+    private String reportQueueName;
+
+    @Value("${rabbitmq.exchange}")
+    private String exchangeName;
+
+    @Value("${rabbitmq.routingkey.customer}")
+    private String customerRoutingKey;
+
+    @Value("${rabbitmq.routingkey.report}")
+    private String reportRoutingKey;
 
     @Bean
     public Queue customerQueue() {
-        return new Queue(QUEUE_NAME_CUSTOMER, true);
+        return new Queue(customerQueueName, true);
     }
 
     @Bean
     public Queue reportQueue() {
-        return new Queue(QUEUE_NAME_REPORT, true);
+        return new Queue(reportQueueName, true);
     }
 
     @Bean
     public TopicExchange exchange() {
-        return new TopicExchange(EXCHANGE_NAME);
+        return new TopicExchange(exchangeName);
     }
 
     @Bean
     public Binding customerBinding(Queue customerQueue, TopicExchange exchange) {
-        return BindingBuilder.bind(customerQueue).to(exchange).with(ROUTING_KEY_CUSTOMER);
+        return BindingBuilder.bind(customerQueue).to(exchange).with(customerRoutingKey);
     }
 
     @Bean
     public Binding reportBinding(Queue reportQueue, TopicExchange exchange) {
-        return BindingBuilder.bind(reportQueue).to(exchange).with(ROUTING_KEY_REPORT);
+        return BindingBuilder.bind(reportQueue).to(exchange).with(reportRoutingKey);
     }
 
     @Bean

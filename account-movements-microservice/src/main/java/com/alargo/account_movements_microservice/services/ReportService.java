@@ -1,15 +1,20 @@
 package com.alargo.account_movements_microservice.services;
 
+import com.alargo.account_movements_microservice.dto.CustomerDataDTO;
 import com.alargo.account_movements_microservice.dto.CustomerFilterDTO;
+import com.alargo.account_movements_microservice.entity.Account;
+import com.alargo.account_movements_microservice.entity.Movement;
 import com.alargo.account_movements_microservice.entity.Report;
 import com.alargo.account_movements_microservice.exception.CustomException;
 import com.alargo.account_movements_microservice.exception.ResourceNotFoundException;
 import com.alargo.account_movements_microservice.repository.AccountRepository;
+import com.alargo.account_movements_microservice.repository.MovementRepository;
 import com.alargo.account_movements_microservice.repository.ReportRepository;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -18,12 +23,14 @@ public class ReportService {
     private final RabbitTemplate rabbitTemplate;
     private final AccountRepository accountRepository;
     private final ReportRepository reportRepository;
+    private final MovementRepository movementRepository;
 
     @Autowired
-    public ReportService(RabbitTemplate rabbitTemplate, AccountRepository accountRepository, ReportRepository reportRepository) {
+    public ReportService(RabbitTemplate rabbitTemplate, AccountRepository accountRepository, ReportRepository reportRepository, MovementRepository movementRepository) {
         this.rabbitTemplate = rabbitTemplate;
         this.accountRepository = accountRepository;
         this.reportRepository = reportRepository;
+        this.movementRepository = movementRepository;
     }
 
     public void generateReport(Long customerId, Date startDate, Date finishDate) {
@@ -51,5 +58,37 @@ public class ReportService {
             throw new CustomException("Error al obtener los reportes por número de cuenta: " + e.getMessage());
         }
     }
-}
 
+    public void saveReport(CustomerDataDTO customerData) {
+        try {
+            Long customerId = customerData.getId();
+            String customerName = customerData.getName();
+
+            List<Account> accounts = accountRepository.findByCustomerId(customerId);
+            List<Report> reports = new ArrayList<>();
+
+            for (Account account : accounts) {
+                List<Movement> movements = movementRepository
+                        .findByAccountAndDateBetween(account, customerData.getStartDate(), customerData.getFinishDate());
+
+                for (Movement movement : movements) {
+                    Report report = createReport(customerName, account, movement);
+                    reports.add(report);
+                }
+            }
+
+            reportRepository.saveAll(reports);
+        } catch (Exception e) {
+            throw new CustomException("An error occurred while processing the customer response: " + e.getMessage());
+        }
+    }
+
+    private Report createReport(String customerName, Account account, Movement movement) {
+        Report report = new Report();
+        report.setCustomerName(customerName);
+        report.setAccount(account);
+        report.setMovement(movement);
+        report.setAvailableBalance(movement.getInitialBalance() + movement.getAmount());
+        return report;
+    }
+}
