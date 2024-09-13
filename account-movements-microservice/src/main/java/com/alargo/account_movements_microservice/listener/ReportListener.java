@@ -17,8 +17,9 @@ public class ReportListener {
         this.reportService = reportService;
     }
 
-    @RabbitListener(queues = {"${rabbitmq.queue.report}"})
+    @RabbitListener(queues = {"report.queue"})
     public void onCustomerResponse(@Payload CustomerDataDTO customerData) {
+        System.out.println("222222222222  Received customer data: " + customerData);
         reportService.saveReport(customerData);
     }
 }

@@ -12,6 +12,7 @@ import com.alargo.account_movements_microservice.repository.MovementRepository;
 import com.alargo.account_movements_microservice.repository.ReportRepository;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -20,6 +21,12 @@ import java.util.List;
 
 @Service
 public class ReportService {
+
+    @Value("${rabbitmq.routingkey.customer}")
+    private String rabbitmqRoutingKeyCustomer;
+    @Value("${rabbitmq.exchange}")
+    private String rabbitmqExchange;
+
     private final RabbitTemplate rabbitTemplate;
     private final AccountRepository accountRepository;
     private final ReportRepository reportRepository;
@@ -39,7 +46,7 @@ public class ReportService {
             customerFilter.setId(customerId);
             customerFilter.setStartDate(Date.from(startDate.toInstant()));
             customerFilter.setFinishDate(Date.from(finishDate.toInstant()));
-            rabbitTemplate.convertAndSend("exchange_name", "routing_key_customer", customerFilter);
+            rabbitTemplate.convertAndSend(rabbitmqExchange, rabbitmqRoutingKeyCustomer, customerFilter);
         } catch (Exception e) {
             throw new CustomException("Error al generar el reporte: " + e.getMessage());
         }
