@@ -1,10 +1,11 @@
 package com.alargo.account_movements_microservice.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import jakarta.persistence.*;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
 import lombok.Data;
-
-import java.util.List;
 
 @Data
 @Entity
@@ -18,7 +19,5 @@ public class Account {
     private String accountType;
     private double balance;
     private boolean state;
-    @OneToMany(mappedBy = "account", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<Movement> movementList;
 }
 

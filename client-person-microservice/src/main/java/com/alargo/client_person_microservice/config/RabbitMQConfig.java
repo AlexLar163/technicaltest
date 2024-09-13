@@ -16,28 +16,35 @@ import org.springframework.amqp.support.converter.MessageConverter;
 @Configuration
 @EnableRabbit
 public class RabbitMQConfig {
-    @Value("${spring.rabbitmq.queue.customer}")
-    private String queueNameCustomer;
-
-    @Value("${spring.rabbitmq.exchange}")
-    private String exchangeName;
-
-    @Value("${spring.rabbitmq.routing-key}")
-    private String routingKey;
+    public static final String QUEUE_NAME_CUSTOMER = "customer.queue";
+    public static final String QUEUE_NAME_REPORT = "report.queue";
+    public static final String EXCHANGE_NAME = "exchange_name";
+    public static final String ROUTING_KEY_CUSTOMER = "routing_key_customer";
+    public static final String ROUTING_KEY_REPORT = "routing_key_report";
 
     @Bean
-    public Queue queue() {
-        return new Queue(queueNameCustomer, true);
+    public Queue customerQueue() {
+        return new Queue(QUEUE_NAME_CUSTOMER, true);
+    }
+
+    @Bean
+    public Queue reportQueue() {
+        return new Queue(QUEUE_NAME_REPORT, true);
     }
 
     @Bean
     public TopicExchange exchange() {
-        return new TopicExchange(exchangeName);
+        return new TopicExchange(EXCHANGE_NAME);
     }
 
     @Bean
-    public Binding binding(Queue queue, TopicExchange exchange) {
-        return BindingBuilder.bind(queue).to(exchange).with(routingKey);
+    public Binding customerBinding(Queue customerQueue, TopicExchange exchange) {
+        return BindingBuilder.bind(customerQueue).to(exchange).with(ROUTING_KEY_CUSTOMER);
+    }
+
+    @Bean
+    public Binding reportBinding(Queue reportQueue, TopicExchange exchange) {
+        return BindingBuilder.bind(reportQueue).to(exchange).with(ROUTING_KEY_REPORT);
     }
 
     @Bean

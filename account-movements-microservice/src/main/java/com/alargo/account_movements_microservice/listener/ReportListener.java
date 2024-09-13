@@ -1,6 +1,6 @@
 package com.alargo.account_movements_microservice.listener;
 
-import com.alargo.account_movements_microservice.dto.CustomerFilterDTO;
+import com.alargo.account_movements_microservice.dto.CustomerDataDTO;
 import com.alargo.account_movements_microservice.entity.Account;
 import com.alargo.account_movements_microservice.entity.Movement;
 import com.alargo.account_movements_microservice.entity.Report;
@@ -9,6 +9,7 @@ import com.alargo.account_movements_microservice.repository.MovementRepository;
 import com.alargo.account_movements_microservice.repository.ReportRepository;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -27,17 +28,17 @@ public class ReportListener {
         this.reportRepository = reportRepository;
     }
 
-    @RabbitListener(queues = "queue_name_report")
-    public void onCustomerResponse(CustomerFilterDTO customerFilter) {
-        Long customerId = customerFilter.getId();
-        String customerName = customerFilter.getName();
+    @RabbitListener(queues = {"report.queue"})
+    public void onCustomerResponse(@Payload CustomerDataDTO customerData) {
+        Long customerId = customerData.getId();
+        String customerName = customerData.getName();
 
         List<Account> accounts = accountRepository.findByCustomerId(customerId);
         List<Report> reports = new ArrayList<>();
 
         for (Account account : accounts) {
             List<Movement> movements = movementRepository
-                    .findByAccountAndDateBetween(account, customerFilter.getStartDate(), customerFilter.getFinishDate());
+                    .findByAccountAndDateBetween(account, customerData.getStartDate(), customerData.getFinishDate());
 
             for (Movement movement : movements) {
                 Report report = new Report();

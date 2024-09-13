@@ -6,8 +6,7 @@ import java.util.Date;
 
 @Data
 public class ReportDTO {
-    private Long customerId;
-    private String name;
+    private Long id;
     private Date startDate;
     private Date finishDate;
 }

@@ -23,18 +23,22 @@ public class CustomerListener {
         this.rabbitTemplate = rabbitTemplate;
     }
 
-    @RabbitListener(queues = "${spring.rabbitmq.queue.customer}")
+    @RabbitListener(queues = {"customer.queue"})
     public void requestReport(@Payload ReportDTO reportDTO) {
-        Long customerId = reportDTO.getCustomerId();
-
-        Customer customer = customerRepository.findById(customerId)
-                .orElseThrow(() -> new ResourceNotFoundException("Customer no encontrado"));
-        CustomerFilterDTO customerDataDTO = new CustomerFilterDTO();
-        customerDataDTO.setId(customer.getId());
-        customerDataDTO.setName(customer.getName());
-        customerDataDTO.setStartDate(reportDTO.getStartDate());
-        customerDataDTO.setFinishDate(reportDTO.getFinishDate());
-
-        rabbitTemplate.convertAndSend("exchange_name", "routing_key_report", customerDataDTO);
+        try {
+            Long customerId = reportDTO.getId();
+            Customer customer = customerRepository.findById(customerId).orElseThrow(() -> new ResourceNotFoundException("Cliente no encontrado"));
+            CustomerFilterDTO customerDataDTO = new CustomerFilterDTO();
+            customerDataDTO.setId(customer.getId());
+            customerDataDTO.setName(customer.getName());
+            customerDataDTO.setStartDate(reportDTO.getStartDate());
+            customerDataDTO.setFinishDate(reportDTO.getFinishDate());
+            rabbitTemplate.convertAndSend("exchange_name", "routing_key_report", customerDataDTO);
+        }
+        catch (ResourceNotFoundException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new ResourceNotFoundException("Error al obtener el cliente por ID: " + e.getMessage());
+        }
     }
 }
