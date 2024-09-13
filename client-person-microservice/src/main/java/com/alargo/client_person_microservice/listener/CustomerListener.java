@@ -24,7 +24,6 @@ public class CustomerListener {
 
     @RabbitListener(queues = {"customer.queue"})
     public void requestReport(@Payload ReportDTO reportDTO) {
-        System.out.println("1111111111111 Received report request: " + reportDTO);
-        customerService.processReportRequest(reportDTO);
+`        customerService.processReportRequest(reportDTO);
     }
 }
