@@ -24,6 +24,6 @@ public class CustomerListener {
 
     @RabbitListener(queues = {"customer.queue"})
     public void requestReport(@Payload ReportDTO reportDTO) {
-`        customerService.processReportRequest(reportDTO);
+        customerService.processReportRequest(reportDTO);
     }
 }

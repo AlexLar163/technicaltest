@@ -31,6 +31,8 @@ public class MovementService {
                 throw new ResourceNotFoundException("No hay movimientos registrados");
             }
             return movements;
+        } catch (ResourceNotFoundException e) {
+            throw e;
         } catch (Exception e) {
             throw new CustomException("Error al obtener todos los movimientos");
         }
@@ -40,6 +42,8 @@ public class MovementService {
         try {
             return movementRepository.findById(id)
                     .orElseThrow(() -> new ResourceNotFoundException("Movimiento no encontrado"));
+        } catch (ResourceNotFoundException e) {
+            throw e;
         } catch (Exception e) {
             throw new CustomException("Error al obtener el movimiento por ID");
         }
@@ -52,6 +56,8 @@ public class MovementService {
                     .orElseThrow(() -> new ResourceNotFoundException("Cuenta no encontrada con ID: " + accountId));
             movement.setAccount(account);
             return movementRepository.save(movement);
+        } catch (ResourceNotFoundException e) {
+            throw e;
         } catch (Exception e) {
             throw new CustomException("Error al guardar el movimiento");
         }
@@ -61,6 +67,8 @@ public class MovementService {
         try {
             Movement movement = getMovementById(id);
             movementRepository.delete(movement);
+        } catch (ResourceNotFoundException e) {
+            throw e;
         } catch (Exception e) {
             throw new CustomException("Error al eliminar el movimiento");
         }
@@ -86,6 +94,8 @@ public class MovementService {
             accountRepository.save(account);
 
             return movementRepository.save(movement);
+        } catch (ResourceNotFoundException e) {
+            throw e;
         } catch (Exception e) {
             throw new CustomException("Error al registrar movimiento");
         }

@@ -38,17 +38,22 @@ public class CustomerService {
             }
             return customers;
 
+        } catch (ResourceNotFoundException e) {
+            throw e;
         } catch (Exception e) {
-            throw new CustomException("Error al obtener todos los movimientos");
+            throw new CustomException("Error al obtener todos los clientes", e);
         }
     }
 
     public Customer getCustomerById(Long id) {
         try {
             return customerRepository.findById(id)
-                    .orElseThrow(() -> new ResourceNotFoundException("Cliente no encontrado"));
-        } catch (Exception e) {
-            throw new CustomException("Error al obtener el cliente por ID");
+                .orElseThrow(() -> new ResourceNotFoundException("Cliente no encontrado"));
+        } catch (ResourceNotFoundException e) {
+            throw e;
+        }
+        catch (Exception e) {
+            throw new CustomException("Error al obtener el cliente por ID", e);
         }
     }
 
@@ -56,7 +61,7 @@ public class CustomerService {
         try {
             return customerRepository.save(customer);
         } catch (Exception e) {
-            throw new CustomException("Error al guardar el cliente");
+            throw new CustomException("Error al guardar el cliente",e);
         }
     }
 
@@ -65,10 +70,9 @@ public class CustomerService {
             Customer customer = getCustomerById(id);
             customerRepository.delete(customer);
         } catch (Exception e) {
-            throw new CustomException("Error al eliminar el cliente");
+            throw new CustomException("Error al eliminar el cliente",e);
         }
     }
-
 
     public void processReportRequest(ReportDTO reportDTO) {
         try {
@@ -81,8 +85,11 @@ public class CustomerService {
             customerDataDTO.setStartDate(reportDTO.getStartDate());
             customerDataDTO.setFinishDate(reportDTO.getFinishDate());
             rabbitTemplate.convertAndSend(rabbitmqExchange, rabbitmqRoutingKeyReport, customerDataDTO);
-        } catch (Exception e) {
-            throw new CustomException("Error al generar el reporte: " + e.getMessage());
+        } catch (ResourceNotFoundException e) {
+            throw e;
+        }
+        catch (Exception e) {
+            throw new CustomException("Error al generar el reporte: " + e.getMessage(), e);
         }
     }
 }

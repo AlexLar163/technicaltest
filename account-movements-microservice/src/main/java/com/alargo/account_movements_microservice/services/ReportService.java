@@ -61,6 +61,8 @@ public class ReportService {
             return reports;
         } catch (ResourceNotFoundException e) {
             throw e;
+        } catch (NumberFormatException e) {
+            throw new CustomException("El número de cuenta debe ser un número entero");
         } catch (Exception e) {
             throw new CustomException("Error al obtener los reportes por número de cuenta: " + e.getMessage());
         }
@@ -85,17 +87,24 @@ public class ReportService {
             }
 
             reportRepository.saveAll(reports);
+        } catch (ResourceNotFoundException e) {
+            throw e;
+        } catch (NumberFormatException e) {
+            throw new CustomException("El ID del cliente debe ser un número entero");
         } catch (Exception e) {
             throw new CustomException("An error occurred while processing the customer response: " + e.getMessage());
         }
     }
 
     private Report createReport(String customerName, Account account, Movement movement) {
-        Report report = new Report();
-        report.setCustomerName(customerName);
-        report.setAccount(account);
-        report.setMovement(movement);
-        report.setAvailableBalance(movement.getInitialBalance() + movement.getAmount());
-        return report;
+        try {
+            Report report = new Report();
+            report.setCustomerName(customerName);
+            report.setAccount(account);
+            report.setMovement(movement);
+            return report;
+        } catch (Exception e) {
+            throw new CustomException("Error al crear el reporte: " + e.getMessage());
+        }
     }
 }

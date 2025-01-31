@@ -26,6 +26,8 @@ public class AccountService {
                 throw new ResourceNotFoundException("No hay cuentas registradas");
             }
             return accounts;
+        } catch (ResourceNotFoundException e) {
+            throw e;
         } catch (Exception e) {
             throw new CustomException("Error al obtener todas las cuentas");
         }
@@ -35,6 +37,8 @@ public class AccountService {
         try {
             return accountRepository.findById(id)
                     .orElseThrow(() -> new ResourceNotFoundException("Cuenta no encontrada"));
+        } catch (ResourceNotFoundException e) {
+            throw e;
         } catch (Exception e) {
             throw new CustomException("Error al obtener la cuenta por ID");
         }
@@ -42,6 +46,9 @@ public class AccountService {
 
     public Account saveAccount(Account account) {
         try {
+            if (account == null) {
+                throw new IllegalArgumentException("Account cannot be null");
+            }
             return accountRepository.save(account);
         } catch (Exception e) {
             throw new CustomException("Error al guardar la cuenta");
@@ -51,7 +58,13 @@ public class AccountService {
     public void deleteAccount(Long id) {
         try {
             Account account = getAccountById(id);
+            if (account == null) {
+                throw new ResourceNotFoundException("Cuenta no encontrada");
+            }
             accountRepository.delete(account);
+
+        } catch (ResourceNotFoundException e) {
+            throw e;
         } catch (Exception e) {
             throw new CustomException("Error al eliminar la cuenta");
         }
